@@ -1,0 +1,23 @@
+[
+  {"query": "can you add a second little button next to the collapse-all one in the title bar of the Claude desktop app? i want it to open my Downloads folder when i click it. the existing button is drawn in collapse-all/CollapseButton.ahk if that helps", "should_trigger": true},
+  {"query": "i installed skills-pane from this repo and `claude plugin list` shows skills-pane@claude-code-mods as enabled, but when i start a new session nothing shows up on the right hand side and there's no Skills toggle above the prompt. where do i even start looking?", "should_trigger": true},
+  {"query": "ran `claude plugin test` on my new pane plugin and it dies with 'no implementation for $.session.getLoadedSkills' — i think my register.test.tsx is missing something? how do i get the test to pass", "should_trigger": true},
+  {"query": "I'd like a band above the prompt box in Claude Code that shows how many tokens the last turn used, and it should be a plugin in this repo like skills-pane. can you build it?", "should_trigger": true},
+  {"query": "write me an autohotkey v2 script that finds the Claude desktop window and presses the Settings button in the left sidebar through UI automation. i don't want raw coordinate clicks because the window gets moved around all the time", "should_trigger": true},
+  {"query": "is it possible to add a card to the right-hand rail of the Claude desktop app, under Context and Connectors, that shows the current git branch? would that be a plugin?", "should_trigger": true},
+  {"query": "after the latest Claude app update the collapse-all icon sits about 3px lower than the Forward arrow. can you re-measure the title bar and nudge it back into line?", "should_trigger": true},
+  {"query": "how do i get skills-pane to load in every new session instead of only through that dev-mods hot reload folder? i think there was something about using this repo as a local marketplace", "should_trigger": true},
+  {"query": "ugh my hooks/register.tsx won't load, the loader complains about the `$` parameter even though tsc is happy", "should_trigger": true},
+  {"query": "learned.md in the mods skill has a few entries now. can you curate it - fold the confirmed ones into the body and clear the log?", "should_trigger": true},
+
+  {"query": "write an autohotkey v2 script for Chrome that auto-clicks the 'Skip Intro' button on Netflix whenever it appears. i'm on Windows 11 and the button's role is a button with text 'Skip Intro' i think", "should_trigger": false},
+  {"query": "I want a Claude Code skill that rewrites my commit messages into conventional-commit style. can you write the SKILL.md for it and tell me where to put it?", "should_trigger": false},
+  {"query": "in an Electron app, how do i make a custom frameless title bar accessible to screen readers? i've got divs with onClick right now, thinking role=button, aria-label and a visible focus ring", "should_trigger": false},
+  {"query": "the i-have-adhd plugin in ~/.claude/plugins runs its SessionStart hook on resume as well as startup. edit its hooks.json so the matcher is startup only", "should_trigger": false},
+  {"query": "can you tighten up the README.md in this repo? it's too wordy and the install section repeats itself", "should_trigger": false},
+  {"query": "add a PreToolUse hook to my project's .claude/settings.json that blocks any Bash command containing 'git push --force' and tells Claude why", "should_trigger": false},
+  {"query": "build me a VS Code extension that puts the current git branch in the status bar and turns it red when i'm on main", "should_trigger": false},
+  {"query": "in C# how do i walk the UI Automation tree of a WPF app for my test harness and print each element's Name and ControlType? using System.Windows.Automation", "should_trigger": false},
+  {"query": "claude desktop crashes on launch since the last update, just a white window then closes. where are the logs on windows and how do i reset the app's local data without losing my chats?", "should_trigger": false},
+  {"query": "how do i write a custom slash command in .claude/commands/test.md that runs my pytest suite and summarises the failures?", "should_trigger": false}
+]
