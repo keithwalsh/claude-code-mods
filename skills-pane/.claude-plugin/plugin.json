@@ -1,0 +1,7 @@
+{
+  "name": "skills-pane",
+  "version": "0.1.0",
+  "description": "A pane listing the skills loaded in this session, with a toggle above the prompt",
+  "author": { "name": "keithwalsh" },
+  "types": "./types/index.d.ts"
+}

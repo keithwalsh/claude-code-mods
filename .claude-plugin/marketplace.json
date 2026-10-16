@@ -1,0 +1,12 @@
+{
+  "name": "claude-code-mods",
+  "owner": { "name": "keithwalsh" },
+  "description": "Personal mods for Claude Code and the Claude desktop app",
+  "plugins": [
+    {
+      "name": "skills-pane",
+      "source": "./skills-pane",
+      "description": "A pane listing the skills loaded in this session, with a toggle above the prompt"
+    }
+  ]
+}
