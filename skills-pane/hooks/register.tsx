@@ -37,15 +37,35 @@ function label(context: string) {
   return heading ?? (first.length > 60 ? `${first.slice(0, 57)}...` : first)
 }
 
-// Skills the model loaded through the Skill tool before this module was loaded.
-async function loadedSoFar($: EngineInterface) {
-  const names: string[] = []
-  for (const message of await $.session.messages())
-    for (const use of message.toolUses)
-      if (use.tool === 'Skill' && !use.isError && typeof use.input.skill === 'string')
-        names.push(use.input.skill)
+// A skill typed as /name leaves "<command-message>name</command-message>" then
+// "<command-name>/name</command-name>"; a built-in such as /compact puts <command-name>
+// first. One loaded before a compaction comes back as "### Skill: name" over "Path: ...".
+const TYPED_SKILL = /<command-message>[^<]*<\/command-message>\s*<command-name>\/?([^<]+)<\/command-name>/g
+const KEPT_SKILL = /^### Skill: (.+?)\r?\nPath: /gm
 
-  return names
+// Skills loaded before this module was loaded, from the model's copy of the conversation
+// (the rows form leaves out what a compaction kept): Skill tool calls that did not fail,
+// skills typed as /name, and skills a compaction kept. The desktop restarts an idle
+// session's engine, which empties the list, so this is what rebuilds it.
+async function loadedSoFar($: EngineInterface) {
+  const messages = await $.session.messages({ as: 'api' })
+  const failed = new Set<unknown>()
+  for (const message of messages)
+    for (const block of message.content)
+      if (block.type === 'tool_result' && block.is_error) failed.add(block.tool_use_id)
+
+  const names: string[] = []
+  for (const message of messages)
+    for (const block of message.content) {
+      const input = block.input as { skill?: unknown } | undefined
+      if (block.type === 'tool_use' && block.name === 'Skill' && !failed.has(block.id) && typeof input?.skill === 'string')
+        names.push(input.skill)
+      if (message.role === 'user' && block.type === 'text' && typeof block.text === 'string')
+        for (const match of [...block.text.matchAll(TYPED_SKILL), ...block.text.matchAll(KEPT_SKILL)])
+          names.push(match[1] ?? '')
+    }
+
+  return names.filter(Boolean)
 }
 
 // Context SessionStart hooks injected before this module was loaded. The model's

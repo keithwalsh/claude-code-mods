@@ -63,7 +63,9 @@ session).
 
 - `skill.prompt` fires on every skill load (`/name`, the Skill tool, or preloaded
   into a subagent). Skills loaded before the plugin are read back from the
-  transcript's Skill tool calls.
+  conversation: Skill tool calls, skills typed as `/name`, and skills a
+  compaction kept. This is also what refills the list when the desktop restarts
+  an idle session's engine, which empties it.
 - `classic.SessionStart` sits above the settings and plugin hooks, so it sees the
   context they return. Each entry is named by its first `# heading`, else its
   first line.

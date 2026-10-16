@@ -29,12 +29,16 @@ const BAND = {
   },
 } as const
 
-// An assistant message calling the Skill tool, as $.session.messages() returns it.
-const skillCall = (skill: string, id: string, isError?: true) => ({
-  role: 'assistant' as const,
-  text: '',
-  toolUses: [{ tool_use_id: id, tool: 'Skill', input: { skill }, ...(isError && { isError }) }],
-})
+type ApiMessage = { role: 'user' | 'assistant'; content: { type: string; [field: string]: unknown }[] }
+
+// A Skill tool call and its result, as $.session.messages({ as: 'api' }) returns them.
+const skillCall = (skill: string, id: string, isError?: true): ApiMessage[] => [
+  { role: 'assistant', content: [{ type: 'tool_use', id, name: 'Skill', input: { skill } }] },
+  { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'Launching skill', ...(isError && { is_error: true }) }] },
+]
+
+// A user message of plain text blocks.
+const said = (...texts: string[]): ApiMessage => ({ role: 'user', content: texts.map(text => ({ type: 'text', text })) })
 
 // The engine expanding a skill's prompt: hands the text back as it came.
 const expandSkills = (on: On) => on('skill.prompt', async (_$, e) => ({ text: e.text }))
@@ -42,14 +46,12 @@ const expandSkills = (on: On) => on('skill.prompt', async (_$, e) => ({ text: e.
 // What i-have-adhd's SessionStart hook hands the model, cut short.
 const ADHD = 'ADHD MODE ACTIVE (always-on). Say "stop adhd mode" to turn it off.\n\n\r\n# i-have-adhd\r\n\r\nThe reader has ADHD.'
 
-type ApiMessage = { role: 'user' | 'assistant'; content: { type: string; text?: string }[] }
-
-// Stands in for the engine beneath the mod at session start: `rows` is the
-// transcript as rows, `api` the model's copy of it.
-function fakeSession(on: On, rows: ReturnType<typeof skillCall>[], api: ApiMessage[] = []) {
+// Stands in for the engine beneath the mod at session start: `api` is the model's
+// copy of the conversation so far.
+function fakeSession(on: On, api: ApiMessage[]) {
   expandSkills(on)
   on('session.start', async (_$, e) => ({ cwd: e.cwd }))
-  on('session.messages', async (_$, e) => ({ value: e?.as === 'api' ? api : rows }))
+  on('session.messages', async () => ({ value: api }))
   on('command.register', async () => ({ value: { command: 'skills' } }))
   on('ui.open', async () => ({ value: { isPlaced: true } }))
 }
@@ -80,13 +82,29 @@ test('says so when no skill has loaded', async $ => {
 })
 
 test('picks up skills the Skill tool loaded before the mod, skipping failed calls', async ($, on) => {
-  fakeSession(on, [skillCall('plugin-authoring', 't1'), skillCall('nope', 't2', true), skillCall('plugin-authoring', 't3')])
+  fakeSession(on, [...skillCall('plugin-authoring', 't1'), ...skillCall('nope', 't2', true), ...skillCall('plugin-authoring', 't3')])
   await $.session.start(start)
   await $.skill.prompt({ skill: 'pdf', text: '' })
 
   const texts = await listed($, 'desktop')
   expect(texts.slice(0, 2)).toEqual(['plugin-authoring', 'pdf'])
   expect(texts).not.toContain('nope')
+})
+
+// What the engine's copy of the conversation holds for each, as measured on 2.1.295.
+const TYPED = "<command-message>afriport-report</command-message>\n<command-name>/afriport-report</command-name>\n<command-args>what's next?</command-args>"
+const HARNESS = '<command-message>workflow-authoring</command-message>\n<command-name>workflow-authoring</command-name>\n<skill-format>true</skill-format>'
+const BUILT_IN = '<command-name>/compact</command-name>\n            <command-message>compact</command-message>\n            <command-args></command-args>'
+const KEPT = 'The following skills were invoked EARLIER in this session (before the conversation was compacted), not on the current turn.\n\n### Skill: skill-improver\nPath: userSettings:skill-improver\n\nBase directory for this skill: C:/skills/skill-improver'
+
+test('rebuilds the list after an engine restart: typed as /name, loaded by the harness or kept by a compaction', async ($, on) => {
+  fakeSession(on, [said(KEPT), said(TYPED), said(BUILT_IN), ...skillCall('halo', 't1'), said(HARNESS)])
+  await $.session.start(start)
+
+  const texts = await listed($, 'desktop')
+  expect(texts.slice(0, 4)).toEqual(['skill-improver', 'afriport-report', 'halo', 'workflow-authoring'])
+  expect(texts).not.toContain('compact')
+  expect(texts).not.toContain('No skills loaded yet.')
 })
 
 test('lists context SessionStart hooks inject, named by its heading or else its first line', async ($, on) => {
@@ -103,7 +121,7 @@ test('lists context SessionStart hooks inject, named by its heading or else its 
 
 test("picks up context injected before the mod loaded, from the model's copy of the conversation", async ($, on) => {
   const reminder = `<system-reminder>SessionStart:startup hook success: ${ADHD}</system-reminder>`
-  fakeSession(on, [], [{ role: 'user', content: [{ type: 'text', text: reminder }, { type: 'text', text: 'hello' }] }])
+  fakeSession(on, [said(reminder, 'hello')])
   await $.session.start(start)
 
   const texts = await listed($, 'desktop')
