@@ -97,8 +97,13 @@ test with "hooks module did not load".
 
 ## 4. Reading the session
 
-- Skills loaded so far: `$.session.messages()` rows, then `message.toolUses`
-  where `tool === 'Skill'` and `input.skill` is a string; skip `isError`.
+- Skills loaded so far: read `$.session.messages({ as: 'api' })`, not the rows.
+  Three shapes (measured 2026-10-16 on 2.1.295): a `tool_use` block named
+  `Skill` (skip it when its `tool_result` has `is_error`); a user text with
+  `<command-message>name</command-message>` then `<command-name>/name</command-name>`
+  for a typed skill (a built-in like `/compact` puts `<command-name>` first);
+  and, after a compaction, `### Skill: name` over `Path: …`. The rows form drops
+  what a compaction kept and the harness's own loads (`<skill-format>true`).
 - `skill.prompt` fires on every skill load after that (`/name`, the Skill tool,
   a subagent preload). Hook it and return `next(e)` to pass the text through.
 - Context from SessionStart hooks (i-have-adhd and the like) never raises
@@ -154,7 +159,11 @@ test with "hooks module did not load".
   already-running session after `plugin install`; `/reload-plugins` is the
   documented way (unconfirmed from the desktop prompt).
 - A reload runs `register` again: module-level variables reset, `$.state` keeps
-  its values across reloads.
+  its values across reloads. A new process does not: `$.state` starts empty.
+  The desktop stops an idle session's engine and starts it again with
+  `--resume` when needed, with no SessionStart:resume line in the transcript, so
+  anything a pane lists must be rebuildable from the conversation at
+  `session.start`. Verified: a probe's atom read `[]` after `-p --resume`.
 - The transcript carries one dim line per reload naming the mod and its hooks
   (`skills-pane reloaded (7 hooks: …)`), and one per hook that failed.
 
